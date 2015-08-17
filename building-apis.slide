@@ -1,0 +1,92 @@
+Building APIs
+The Golang UK Conference, London
+21 Aug 2015
+Tags: APIs, RESTful, JSON, Data, Golang
+
+Mat Ryer
+https://github.com/matryer
+@matryer
+
+* About me
+
+- Been coding since age 6
+- Been Go-ing since `r59`
+- Using Go in anger since 2011
+- In love with test-driven development
+- Founded *Testify* and other less successful packages
+- Just joined GrayMeta, Inc.
+- Author of Go Programming Blueprints
+
+* Book: Go Programming Blueprints
+
+.image go-blueprints.jpg
+.image review.png
+
+http://bit.ly/goblueprints
+
+* Building APIs
+
+* When you say API...?
+
+Everything is an API - including:
+
+- Packages
+    assert.Equal(a, b, "a should equal b")
+- Types
+    type Worker struct {
+    	Stop() <-chan struct{}
+    	Start() error
+    }
+- Functions
+    func Something(in io.Reader, out io.Writer) error
+
+* I'm talking about Web APIs
+
+* Before Go
+
+- I used Ruby
+- Scaffolding
+    script/generate controller mycontroller new create update edit destroy index show
+- I like APIs to be quick
+- C#.NET took *ages* to write
+
+* Why Go?
+
+- (Very) rapid dev
+- Production ready
+.code production_ready.go
+- We ♥ Go
+
+* Going
+
+.image trend.png 300 _
+
+Google trend for "Golang"
+
+* Web API design tips
+
+- Don't be clever
+- Be boring and obvious
+- Impress with functionality
+- Talk JSON
+- RESTful over HTTP
+- Status codes (200 == OK, 404 == Not Found)
+- Version it
+    GET /api/v1/wonderful-things/
+- SSL (HTTPS) every time
+- Make output pretty (human readable)
+- Use the web (caching)
+
+* Building APIs in Go
+
+- Use the standard library for as long as possible
+- You may not need an external package at all
+- Use `http.Handler` and `http.HandlerFunc`
+
+.code handlerfunc.go
+
+Remember this signature
+
+    func(w http.ResponseWriter, r *http.Request)
+
+* Questions?

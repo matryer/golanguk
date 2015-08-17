@@ -1,0 +1,98 @@
+Building APIs
+The Golang UK Conference
+21 Aug 2015
+
+Mat Ryer
+https://github.com/matryer
+@matryer
+
+* Why test-driven development?
+
+- Evidence based programming
+- Prove bugs or missing features
+- Demonstrate the intent
+- Protected from regression
+- Write tests for each other
+- Code becomes documentation
+- Get it out of your brain
+- Be your own user first
+
+* Simple process
+
+- Write a unit test
+- Run all tests to ensure your new one fails (RED)
+- Write the **smallest* amount of code needed to make your test pass
+- Run your tests and see it pass (GREEN)
+- Run all your tests to make sure you haven't broken anything
+- Commit?
+
+* Basic test
+
+.play -edit test1.go /START OMIT/,/END OMIT/
+
+- Make your tests give you a TODO list
+
+* Go sugar
+
+.play -edit test2.go /START OMIT/,/END OMIT/
+
+* Go tools
+
+- go test - runs tests and gives you output
+- go test ./... - run tests for multi-package projects
+- go test -cover - http://blog.golang.org/cover
+
+.code coverage.sh
+
+With TDD practices, the coverage number is automatically very high.
+
+* Helper libraries?
+
+- Ginkgo
+- GoConvey
+- GoCheck
+- Testify
+- etc
+
+.code spec.go
+
+- Extra stuff to learn
+- If not just add assert(testing.T, bool), ok(testing.T, thing), etc.
+
+* Testify - Thou shalt write tests
+
+- Familiar assertions pattern
+
+.code testify.go
+
+- go get github.com/stretchr/testify
+
+* Mocking
+
+- Use mocked objects in place of real objects when writing test code
+- Removes dependency on external systems
+- Make progress without having an actual implementation
+
+In Testify:
+
+.code mock.go /START OMIT/,/END OMIT/
+
+- Interfaces in test code
+
+* What we do
+
+- On save: build and run all package tests - see blog.stretchr.com
+
+.image failedtest.png
+
+* Ideas
+
+- Be similar to Go standard library
+- Prove a bug by submitting a failing test with your bug report
+- Describe new functionality in test code
+- Give a failing test to your pair partner
+- Tests as simple as possible
+- Different test package (test as a real user)
+- Interfaces in test code
+
+* Workshop
