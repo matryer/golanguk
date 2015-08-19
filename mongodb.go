@@ -18,7 +18,7 @@ type dbwrapper struct {
 	h         http.Handler
 }
 
-func (h *dbwrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (dbwrapper *dbwrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// copy the session
 	dbcopy := h.dbSession.Copy()
@@ -28,7 +28,7 @@ func (h *dbwrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	context.Set(r, "db", dbcopy)
 
 	// serve the request
-	h.h.ServeHTTP(w, r)
+	dbwrapper.h.ServeHTTP(w, r)
 }
 
 // END OMIT

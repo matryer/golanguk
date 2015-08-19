@@ -19,17 +19,23 @@ type dbwrapper struct {
 	h         http.Handler
 }
 
-func (h *dbwrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (dbwrapper *dbwrapper) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	// copy the session
 	dbcopy := h.dbSession.Copy()
-	defer dbcopy.Close()
+	defer dbcopy.Close() // clean up after
+
+	// put the session in the context for this Request
 	context.Set(r, "db", dbcopy)
-	h.h.ServeHTTP(w, r)
+
+	// serve the request
+	dbwrapper.h.ServeHTTP(w, r)
 }
 
 // START OMIT
 func main() {
 	// connect to mongo
-	db, _ := mgo.Dial("localhost")
+	db, _ := mgo.Dial("localhost") // expensive
 	defer db.Close()
 
 	router := mux.NewRouter()

@@ -24,7 +24,7 @@ https://github.com/matryer
 .image go-blueprints.jpg
 .image review.png
 
-http://bit.ly/goblueprints
+[[http://bit.ly/goblueprints][http://bit.ly/goblueprints]]
 
 * Building APIs
 
@@ -33,14 +33,14 @@ http://bit.ly/goblueprints
 Everything is an API - including:
 
 - Packages
-    assert.Equal(a, b, "a should equal b")
+  assert.Equal(a, b, "a should equal b")
 - Types
-    type Worker struct {
-    	Stop() <-chan struct{}
-    	Start() error
-    }
+  type Worker struct {
+  	Stop() <-chan struct{}
+  	Start() error
+  }
 - Functions
-    func Something(in io.Reader, out io.Writer) error
+  func Something(in io.Reader, out io.Writer) error
 
 * I'm talking about Web APIs
 
@@ -48,7 +48,7 @@ Everything is an API - including:
 
 - I used Ruby
 - Scaffolding
-    script/generate controller mycontroller new create update edit destroy index show
+  script/generate controller mycontroller new create update edit destroy index show
 - I like APIs to be quick
 - C#.NET took *ages* to write
 
@@ -74,7 +74,7 @@ Google trend for "Golang"
 - RESTful over HTTP
 - Status codes (200 == OK, 404 == Not Found)
 - Version it
-    GET /api/v1/wonderful-things/
+  GET /api/v1/wonderful-things/
 - SSL (HTTPS) every time (check out Cloudflare.com)
 - Make output pretty (human readable)
 - Use the web (caching)
@@ -89,7 +89,7 @@ Google trend for "Golang"
 
 Remember this signature
 
-    func(w http.ResponseWriter, r *http.Request)
+  func(w http.ResponseWriter, r *http.Request)
 
 * Code explained
 
@@ -138,9 +138,9 @@ Almost every API will interact with some kind of datastore.
 
 We need to:
 
-- Connect when program is first run
+- Connect when program is first run (expensive)
 - Disconnect when the program is terminated
-- Create a session per request
+- Create a session per request (cheap)
 - Clean up after each request
 
 * Wrapping handlers
@@ -171,6 +171,16 @@ Enter Gorilla context package - github.com/gorilla/context
 * Using the MongoDB wrapper
 
 .code mongodb2.go /START OMIT/,/END OMIT/
+
+* Request lifecycle
+
+- Client hits `GET` `\things`
+- `mux.Router` passes the request to `WithDB`
+- `WithDB` copies database session and stores it in the context
+- `WithDB` then calls `handleThingsRead`
+- `handleThingsRead` gets the database session from the context, uses it and responds
+- Execution then passes back to `WithDB` which exits and the deferred `Close()` function is called - cleaning up the copy
+- `context.ClearHandler` then cleans up the context map for this Request
 
 * Shout out: Women who go
 
