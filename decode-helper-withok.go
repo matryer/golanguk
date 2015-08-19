@@ -13,9 +13,9 @@ func decode(r *http.Request, v interface{}) error {
 	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
 		return err
 	}
-	if validatable, ok := v.(ok); ok {
-		return validatable.OK()
-	}
+	if validatable, ok := v.(ok); ok { // HL
+		return validatable.OK() // HL
+	} // HL
 	return nil
 }
 

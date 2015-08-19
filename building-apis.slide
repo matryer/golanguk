@@ -157,7 +157,7 @@ You could code this yourself... or maybe it's a good excuse to use a package?
 
 - Use `r.Body` (an `io.ReadCloser`)
 
-* Single decode function
+* Decode helper
 
 .code decode-helper.go /START OMIT/,/END OMIT/
 
@@ -217,10 +217,10 @@ Update decode helper:
   }
 
   type Gopher struct {
-    ID           string
-    Name         string
-    Email        string
-    PasswordHash string
+    ID           string `json:"id"`
+    Name         string `json:"name"`
+    Email        string `json:"email"`
+    PasswordHash string `json:"-"`
   }
 
   // Save saves a NewGopher and returns the Gopher.
