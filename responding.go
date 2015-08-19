@@ -16,11 +16,19 @@ func respond(w http.ResponseWriter, r *http.Request, status int, data interface{
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
 	if _, err := io.Copy(w, &buf); err != nil {
 		log.Println("respond:", err)
 	}
+}
+
+func handleSomething(w http.ResponseWriter, r *http.Request) {
+	data, err := LoadSomething()
+	if err != nil {
+		respond(w, r, http.StatusInternalServerError, err)
+		return
+	}
+	respond(w, r, http.StatusOK, data)
 }
 
 // END OMIT

@@ -24,7 +24,7 @@ https://github.com/matryer
 .image go-blueprints.jpg
 .image review.png
 
-[[http://bit.ly/goblueprints][http://bit.ly/goblueprints]]
+[[http://bit.ly/goblueprints]]
 
 * Building APIs
 
@@ -101,14 +101,33 @@ Remember this signature
 
 * Responding
 
-- Single respond function
+* Grow your own respond function
+
 - Mirror ServeHTTP signature (even though we're not using *http.Request yet)
 
 .code responding.go /START OMIT/,/END OMIT/
 
-- See github.com/matryer/respond
+* respond package
 
 .code respond-package.go /START OMIT/,/END OMIT/
+
+- see [[https://github.com/matryer/respond]]
+
+* Options for responding
+
+.code respond-options.go /START OMIT/,/END OMIT/
+
+* The Request
+
+* Inside http.Request
+
+`http.Request` contains everything you need to know about the request. 
+
+- `r.Method` - HTTP method (`GET`, `POST`, `PUT`, `PATCH`, `DELETE` etc.)
+- `r.URL.Path` - Request path (`/things/123`)
+- `r.URL.String()` - Full URL
+- `r.URL.Query()` - Query parameters (`q=something&p=2`)
+- `r.Body` - io.ReadCloser of the request body
 
 * Routing
 
@@ -132,26 +151,102 @@ You could code this yourself... or maybe it's a good excuse to use a package?
 
 - see also httprouter - github.com/julienschmidt/httprouter (but it breaks the ServeHTTP signature)
 
-* Datastore
+* Decoding data from the Request
 
-Almost every API will interact with some kind of datastore.
+.code decode.go /START OMIT/,/END OMIT/
 
-We need to:
+- Use `r.Body` (an `io.ReadCloser`)
 
-- Connect when program is first run (expensive)
-- Disconnect when the program is terminated
-- Create a session per request (cheap)
-- Clean up after each request
+* Single decode function
 
-* Wrapping handlers
+.code decode-helper.go /START OMIT/,/END OMIT/
 
-- Take an `http.Handler` (with other things) and return a single `http.Handler`
+Can be improved later to:
+
+- Check the `Content-Type` header to use different decoders
+- Allow URL parameters to influence how the decoder works
+- Go a little further and validate the input too...
+
+* OK pattern
+
+Implement a simple interface:
+
+  type ok interface {
+    OK() error
+  }
+
+Update decode helper:
+
+.code decode-helper-withok.go /START OMIT/,/END OMIT/
+
+* OK pattern example
+
+  type Gopher struct {
+    Name string
+    Country string
+  }
+
+  func (g *Gopher) OK() error {
+    if len(g.Name) == 0 {
+      return ErrRequired("name")
+    }
+    if len(g.Country) == 0 {
+      return ErrRequired("country")
+    }
+    return nil
+  }
+
+  func handleCreateGopher(w http.ResponseWriter, r *http.Request) error {
+  	var g gopher
+  	if err := decode(r, &g); err != nil {
+  		return err
+  	}
+  	respond.With(w, r, http.StatusOK, &g)
+  	return nil
+  }
+
+* Different type for new things
+
+- New things are different to existing things
+
+  type NewGopher struct {
+    Name            string
+    Email           string
+    Password        string
+    PasswordConfirm string
+  }
+
+  type Gopher struct {
+    ID           string
+    Name         string
+    Email        string
+    PasswordHash string
+  }
+
+  // Save saves a NewGopher and returns the Gopher.
+  func (g *NewGopher) Save(db *mgo.Database) (*Gopher, error) {
+
+    // ...
+
+  }
+
+* Middleware
+
+* Wrapping handlers (Adapters)
+
+- Run code before and after handler code
 
 .code wrapping.go /START OMIT/,/END OMIT/
 
-* Sharing objects across handlers
+* Adapting http.HandlerFunc to handle errors in one place
 
-- Our handler needs a mgo.Session
+.code wrapping-funcs.go /START OMIT/,/END OMIT/
+
+See _Twelve_Go_Best_Practices_-_Francesc_Campoy_
+
+* Sharing objects across handlers with context
+
+- Our handler needs a *Logger
 
 .play context-problem.go /START OMIT/,/END OMIT/
 
@@ -164,7 +259,18 @@ Enter Gorilla context package - github.com/gorilla/context
 - Preserves `ServeHTTP` signature
 - Use `context.Set` and `context.Get`
 
-* MongoDB wrapper
+* Real world example: Database connection
+
+Almost every API will interact with some kind of datastore.
+
+We need to:
+
+- Connect when program is first run (expensive)
+- Disconnect when the program is terminated
+- Create a session per request (cheap)
+- Clean up after each request
+
+* MongoDB wrapper using context
 
 .code mongodb.go /START OMIT/,/END OMIT/
 
@@ -181,6 +287,30 @@ Enter Gorilla context package - github.com/gorilla/context
 - `handleThingsRead` gets the database session from the context, uses it and responds
 - Execution then passes back to `WithDB` which exits and the deferred `Close()` function is called - cleaning up the copy
 - `context.ClearHandler` then cleans up the context map for this Request
+
+* Testing
+
+* Unit testing handlers
+
+- Use net/http/httptest from Std lib
+
+.play handler_test.go /START OMIT/,/END OMIT/
+
+* Integration testing (table driven)
+
+.code table_test.go /START OMIT/,/END OMIT/
+
+- Real Go code
+- Nothing new to learn
+
+* Table driven tests (runner)
+
+.play table_test2.go /START OMIT/,/END OMIT/
+
+- Making real HTTP requests
+- Tests the full stack (including middleware)
+
+* And finally...
 
 * Shout out: Women who go
 
