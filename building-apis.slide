@@ -17,6 +17,8 @@ https://github.com/matryer
 - Just joined GrayMeta, Inc.
 - Author of Go Programming Blueprints
 
+.image gopher-mat.png
+
 * Book: Go Programming Blueprints
 
 .image go-blueprints.jpg
@@ -54,7 +56,7 @@ Everything is an API - including:
 
 - (Very) rapid dev
 - Production ready
-.code production_ready.go
+.code production_ready.go /START OMIT/,/END OMIT/
 - We ♥ Go
 
 * Going
@@ -73,7 +75,7 @@ Google trend for "Golang"
 - Status codes (200 == OK, 404 == Not Found)
 - Version it
     GET /api/v1/wonderful-things/
-- SSL (HTTPS) every time
+- SSL (HTTPS) every time (check out Cloudflare.com)
 - Make output pretty (human readable)
 - Use the web (caching)
 
@@ -83,10 +85,97 @@ Google trend for "Golang"
 - You may not need an external package at all
 - Use `http.Handler` and `http.HandlerFunc`
 
-.code handlerfunc.go
+.code handler.go
 
 Remember this signature
 
     func(w http.ResponseWriter, r *http.Request)
+
+* Code explained
+
+.code production_ready.go 
+
+* http.HandlerFunc
+
+.code handlerfunc.go /START OMIT/,/END OMIT/
+
+* Responding
+
+- Single respond function
+- Mirror ServeHTTP signature (even though we're not using *http.Request yet)
+
+.code responding.go /START OMIT/,/END OMIT/
+
+- See github.com/matryer/respond
+
+.code respond-package.go /START OMIT/,/END OMIT/
+
+* Routing
+
+.code routes.go /START OMIT/,/END OMIT/
+
+- Standard library until you need something more
+
+Beware:
+
+- / matches *everything*
+- No path parameter parsing
+- One handler for every HTTP method
+
+You could code this yourself... or maybe it's a good excuse to use a package?
+
+* Routing package
+
+- Gorilla mux - github.com/gorilla/mux
+
+.code gorilla-mux.go /START OMIT/,/END OMIT/
+
+- see also httprouter - github.com/julienschmidt/httprouter (but it breaks the ServeHTTP signature)
+
+* Datastore
+
+Almost every API will interact with some kind of datastore.
+
+We need to:
+
+- Connect when program is first run
+- Disconnect when the program is terminated
+- Create a session per request
+- Clean up after each request
+
+* Wrapping handlers
+
+- Take an `http.Handler` (with other things) and return a single `http.Handler`
+
+.code wrapping.go /START OMIT/,/END OMIT/
+
+* Sharing objects across handlers
+
+- Our handler needs a mgo.Session
+
+.play context-problem.go /START OMIT/,/END OMIT/
+
+- This breaks `http.Handler` interface
+
+Enter Gorilla context package - github.com/gorilla/context
+
+- Provides a `map[string]interface{}` per Request
+- Easy to clean up (using its own `http.Handler` wrapper)
+- Preserves `ServeHTTP` signature
+- Use `context.Set` and `context.Get`
+
+* MongoDB wrapper
+
+.code mongodb.go /START OMIT/,/END OMIT/
+
+* Using the MongoDB wrapper
+
+.code mongodb2.go /START OMIT/,/END OMIT/
+
+* Shout out: Women who go
+
+- https://twitter.com/womenwhogo
+
+.link http://womenwhogo.org womenwhogo.org
 
 * Questions?

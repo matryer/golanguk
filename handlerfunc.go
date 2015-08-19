@@ -1,10 +1,34 @@
-51	  type Handler interface {
-52	  	ServeHTTP(ResponseWriter, *Request)
-53	  }
-54
-1261	type HandlerFunc func(ResponseWriter, *Request)
-1262	
-1263	// ServeHTTP calls f(w, r).
-1264	func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *Request) {
-1265		f(w, r)
-1266	}
+package main
+
+import (
+	"encoding/json"
+	"log"
+	"net/http"
+)
+
+type msg struct {
+	Message string `json:"msg"`
+}
+
+// START OMIT
+func main() {
+	http.HandleFunc("/hello", handleHello)
+	http.HandleFunc("/goodbye", handleBye)
+	if err := http.ListenAndServe(":8081", nil); err != nil {
+		log.Fatalln(err)
+	}
+}
+
+func handleHello(w http.ResponseWriter, r *http.Request) {
+	if err := json.NewEncoder(w).Encode(&msg{Message: "Hello Golang UK Conf"}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func handleBye(w http.ResponseWriter, r *http.Request) {
+	if err := json.NewEncoder(w).Encode(&msg{Message: "See you next year"}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+// END OMIT
