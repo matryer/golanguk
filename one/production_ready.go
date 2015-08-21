@@ -8,7 +8,7 @@ import (
 
 // START OMIT
 type msg struct {
-	Message string `json:"msg"`
+	Message string `json:"msg"` //= {"msg":"Hi"}
 }
 
 func main() {
@@ -17,9 +17,7 @@ func main() {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		log.Fatalln(err)
-	}
+	log.Fatalln(http.ListenAndServe(":8080", nil))
 }
 
 // END OMIT

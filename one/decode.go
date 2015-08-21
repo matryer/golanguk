@@ -14,16 +14,17 @@ type gopher struct {
 	Country string `json:"country"`
 }
 
-func handleCreateGopher(w http.ResponseWriter, r *http.Request) error {
+func handleCreateGopher(w http.ResponseWriter, r *http.Request) {
 	var g gopher
 	if err := json.NewDecoder(r.Body).Decode(&g); err != nil {
-		return err
+		respond.With(w, r, http.StatusBadRequest, err)
+		return
 	}
 	if err := SaveGopher(&g); err != nil {
-		return err
+		respond.With(w, r, http.StatusInternalServerError, err)
+		return
 	}
 	respond.With(w, r, http.StatusOK, &g)
-	return nil
 }
 
 // END OMIT

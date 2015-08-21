@@ -14,9 +14,7 @@ type msg struct {
 func main() {
 	http.HandleFunc("/hello", handleHello)
 	http.HandleFunc("/goodbye", handleBye)
-	if err := http.ListenAndServe(":8081", nil); err != nil {
-		log.Fatalln(err)
-	}
+	log.Fatalln(http.ListenAndServe(":8081", nil))
 }
 
 func handleHello(w http.ResponseWriter, r *http.Request) {
