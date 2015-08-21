@@ -85,7 +85,7 @@ Remember this signature
 
 from [[http://golang.org/src/net/http/server.go?s=1517:2599#L48]]
 
-* Inside http.Request
+* http.Request
 
 `http.Request` contains everything you need to know about the request. 
 
@@ -135,6 +135,24 @@ You could code this yourself... or maybe it's a good excuse to use a package?
 * Options for responding
 
 .code respond-options.go /START OMIT/,/END OMIT/
+
+* Public pattern
+
+  type Public interface {
+    Public() interface{}
+  }
+
+  func respond(w http.ResponseWriter, r *http.Request, status int, data interface{}) {
+
+    //...
+
+    if obj, ok := data.(Public); ok {
+      data = obj.Public()
+    }
+
+    //...
+
+  }
 
 * Decoding data from Request
 
