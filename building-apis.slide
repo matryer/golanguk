@@ -44,14 +44,6 @@ Everything is an API - including:
 
 * I'm talking about Web APIs
 
-* Before Go
-
-- I used Ruby
-- Scaffolding
-  script/generate controller mycontroller new create update edit destroy index show
-- I like APIs to be quick
-- C#.NET took *ages* to write
-
 * Why Go?
 
 - (Very) rapid dev
@@ -65,19 +57,7 @@ Everything is an API - including:
 
 Google trend for "Golang"
 
-* Web API design tips
-
-- Don't be clever; be boring and obvious
-- Impress with functionality
-- Talk JSON
-- RESTful over HTTP
-- Status codes (200 == OK, 404 == Not Found)
-- Version it
-  GET /api/v1/wonderful-things/
-- Assume load balanced traffic (sessions, state, auth, etc.)
-- SSL (HTTPS) every time (check out [[Cloudflare.com]])
-- Make output pretty (human readable)
-- Use the web (caching)
+* Let's go
 
 * Building APIs in Go
 
@@ -91,35 +71,21 @@ Remember this signature
 
   func(w http.ResponseWriter, r *http.Request)
 
-* Code explained
+* http.ResponseWriter
 
-.code production_ready.go 
+  // A ResponseWriter interface is used by an HTTP handler to
+  // construct an HTTP response.
+  type ResponseWriter interface {
 
-* http.HandlerFunc
+    Header() Header
+    Write([]byte) (int, error)
+    WriteHeader(int)
 
-.code handlerfunc.go /START OMIT/,/END OMIT/
+  }
 
-* Responding
+from [[http://golang.org/src/net/http/server.go?s=1517:2599#L48]]
 
-* Grow your own respond function
-
-- Mirror ServeHTTP signature (even though we're not using *http.Request yet)
-
-.code responding.go /START OMIT/,/END OMIT/
-
-* respond package
-
-.code respond-package.go /START OMIT/,/END OMIT/
-
-- see [[https://github.com/matryer/respond]]
-
-* Options for responding
-
-.code respond-options.go /START OMIT/,/END OMIT/
-
-* The Request
-
-* Inside http.Request
+* http.Request
 
 `http.Request` contains everything you need to know about the request. 
 
@@ -130,6 +96,8 @@ Remember this signature
 - `r.Body` - io.ReadCloser of the request body
 
 * Routing
+
+- `GET` `/things` `->` `handleThings`
 
 .code routes.go /START OMIT/,/END OMIT/
 
@@ -145,19 +113,55 @@ You could code this yourself... or maybe it's a good excuse to use a package?
 
 * Routing package
 
-- Gorilla mux - github.com/gorilla/mux
+- Gorilla mux - [[https://github.com/gorilla/mux]]
 
 .code gorilla-mux.go /START OMIT/,/END OMIT/
 
-- see also httprouter - github.com/julienschmidt/httprouter (but it breaks the ServeHTTP signature)
+- see also httprouter - [[https://github.com/julienschmidt/httprouter]] (but it breaks the ServeHTTP signature)
 
-* Decoding data from the Request
+* Responding with data
 
-.code decode.go /START OMIT/,/END OMIT/
+- Grow your own `respond` function
+- Mirror `ServeHTTP` signature (even though we're not using `*http.Request` yet)
 
-- Use `r.Body` (an `io.ReadCloser`)
+.code responding.go /START OMIT/,/END OMIT/
 
-* Decode helper
+* respond package
+
+.code respond-package.go /START OMIT/,/END OMIT/
+
+- see [[https://github.com/matryer/respond]]
+
+* Options for responding
+
+.code respond-options.go /START OMIT/,/END OMIT/
+
+* Public pattern
+
+  type Public interface {
+    Public() interface{}
+  }
+
+  func respond(w http.ResponseWriter, r *http.Request, status int, data interface{}) {
+    if obj, ok := data.(Public); ok {
+      data = obj.Public()
+    }
+    //...
+  }
+
+  type User struct {
+    ID           OurID
+    Name         string
+    PasswordHash string
+  }
+  func (u *User) Public() interface{} {
+    return map[string]interface{}{
+      "id":   u.ID.Encode(),
+      "name": u.Name,
+    }
+  }
+
+* Decoding data from Request
 
 .code decode-helper.go /START OMIT/,/END OMIT/
 
@@ -196,13 +200,13 @@ Update decode helper:
     return nil
   }
 
-  func handleCreateGopher(w http.ResponseWriter, r *http.Request) error {
-  	var g gopher
-  	if err := decode(r, &g); err != nil {
-  		return err
-  	}
-  	respond.With(w, r, http.StatusOK, &g)
-  	return nil
+  func handleCreateGopher(w http.ResponseWriter, r *http.Request) {
+    var g gopher
+    if err := decode(r, &g); err != nil {
+      respond.With(w, r, http.StatusBadRequest, err)
+      return
+    }
+    respond.With(w, r, http.StatusOK, &g)
   }
 
 * Different type for new things
@@ -230,34 +234,50 @@ Update decode helper:
 
   }
 
-* Middleware
-
-* Wrapping handlers (Adapters)
+* Writing middleware
 
 - Run code before and after handler code
 
 .code wrapping.go /START OMIT/,/END OMIT/
 
-* Adapting http.HandlerFunc to handle errors in one place
+* Don't break the interface
 
-.code wrapping-funcs.go /START OMIT/,/END OMIT/
+Some people do this:
 
-See _Twelve_Go_Best_Practices_-_Francesc_Campoy_
+  func(w http.ResponseWriter, r *http.Request, db *mgo.Session, logger *log.Logger)
 
-* Sharing objects across handlers with context
+But I prefer this:
 
-- Our handler needs a *Logger
+  func(w http.ResponseWriter, r *http.Request)
 
-.play context-problem.go /START OMIT/,/END OMIT/
+And I don't mind this:
 
-- This breaks `http.Handler` interface
+  type Server struct {
+    logger  *log.Logger
+    mailer  MailSender
+    slack   Notifier
+  }
 
-Enter Gorilla context package - github.com/gorilla/context
+  func (s *Server) handleSomething(w http.ResponseWriter, r *http.Request) {...}
 
+  func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {...}
+
+* Sharing data across handlers
+
+Enter Gorilla context package - [[https://github.com/gorilla/context]]
+
+- Doesn't break the interface
 - Provides a `map[string]interface{}` per Request
 - Easy to clean up (using its own `http.Handler` wrapper)
-- Preserves `ServeHTTP` signature
 - Use `context.Set` and `context.Get`
+
+  func prepareSomething(w http.ResponseWriter, r *http.Request) {
+    context.Set(r, "logger", logger)
+  }
+
+  func handleSomethingElse(w http.ResponseWriter, r *http.Request) {
+    logger := context.Get(r, "logger").(*log.Logger)
+  }
 
 * Real world example: Database connection
 
@@ -276,23 +296,51 @@ We need to:
 
 * Using the MongoDB wrapper
 
-.code mongodb2.go /START OMIT/,/END OMIT/
+.code -numbers mongodb2.go /START OMIT/,/END OMIT/
 
 * Request lifecycle
 
 - Client hits `GET` `\things`
 - `mux.Router` passes the request to `WithDB`
 - `WithDB` copies database session and stores it in the context
-- `WithDB` then calls `handleThingsRead`
+- `WithDB` then calls the wrapped handler (`handleThingsRead`)
 - `handleThingsRead` gets the database session from the context, uses it and responds
 - Execution then passes back to `WithDB` which exits and the deferred `Close()` function is called - cleaning up the copy
 - `context.ClearHandler` then cleans up the context map for this Request
 
-* Testing
+* Adapter interface
+
+.code adapter.go /START OMIT/,/END OMIT/
+
+* Other adapters
+
+.code other-adapters.go /START OMIT/,/END OMIT/
+
+* Using adapters
+
+.code using-adapters.go /START OMIT/,/END OMIT/
+
+* Use flags for environment configuration
+
+.code flags.go /START OMIT/,/END OMIT/
+
+Then run it with:
+
+  ./myapi -mongo=$DB_PORT_27017_TCP_ADDR
+
+* Testing (ideally TDD)
+
+* Great tests
+
+- Test one thing
+- If that thing breaks, only one test fails
+- Repeatable
+- Don't rely on run order
+- Don't require external resources
 
 * Unit testing handlers
 
-- Use net/http/httptest from Std lib
+- Use `net/http/httptest` from Std lib
 
 .play handler_test.go /START OMIT/,/END OMIT/
 
@@ -310,12 +358,29 @@ We need to:
 - Making real HTTP requests
 - Tests the full stack (including middleware)
 
-* And finally...
+* Setup and teardown for each test
+
+  var server *httptest.Server
+
+  func setup() {
+    server = httptest.NewServer(&myAPIHandler{})
+  }
+
+  func teardown() {
+    server.Close()
+  }
+
+  func TestSomething(t *testing.T) {
+    setup()
+    defer teardown()
+
+    // TODO: write test with fresh server
+  }
 
 * Shout out: Women who go
 
-- https://twitter.com/womenwhogo
-
-.link http://womenwhogo.org womenwhogo.org
+- Supporting women in the Go community
+- [[https://twitter.com/womenwhogo]]
+- [[http://womenwhogo.org]]
 
 * Questions?
