@@ -143,15 +143,22 @@ You could code this yourself... or maybe it's a good excuse to use a package?
   }
 
   func respond(w http.ResponseWriter, r *http.Request, status int, data interface{}) {
-
-    //...
-
     if obj, ok := data.(Public); ok {
       data = obj.Public()
     }
-
     //...
+  }
 
+  type User struct {
+    ID           OurID
+    Name         string
+    PasswordHash string
+  }
+  func (u *User) Public() interface{} {
+    return map[string]interface{}{
+      "id":   u.ID.Encode(),
+      "name": u.Name,
+    }
   }
 
 * Decoding data from Request
